@@ -1,0 +1,295 @@
+% This package provides new commands for typesetting simple algorithms. Each
+% algorithm looks like a table containing an enumerated list of steps inside it.
+%
+% Author: Anton Rodomanov
+%
+% Usage example:
+% ------------------------------------------------------------------------------
+% \usepackage{SimpleAlgorithm} % in the preamble
+%
+% \begin{SimpleAlgorithm}[title={Gradient Method},label=GradientMethod]
+%   \begin{AlgorithmGroup}[Input]
+%     Starting point $x_0$, step size $\alpha > 0$.
+%   \end{AlgorithmGroup}
+%   \AlgorithmGroupSeparator
+%   \begin{AlgorithmGroup}[Iteration $k \geq 0$]
+%     \begin{AlgorithmSteps}
+%       \AlgorithmStep Compute the gradient $\nabla f(x_k)$.
+%       \AlgorithmStep Update $x_{k+1} = x_k - \alpha \nabla f(x_k)$.
+%     \end{AlgorithmSteps}
+%   \end{AlgorithmGroup}
+% \end{SimpleAlgorithm}
+% ------------------------------------------------------------------------------
+%
+% Notes:
+%   - To load the package, add the following command to the preamble:
+%       \usepackage{SimpleAlgorithm}
+%
+%   - When loading the package, you can also specify the following options:
+%       equation: This option turns on the equation mode. In this mode, all
+%                 algorithms are treated like usual equations.
+%     Example:
+%       \usepackage[equation]{SimpleAlgorithm}
+%
+%   - The "SimpleAlgorithm" environment has two optional arguments, which can be
+%     specified using the standard "keyword=value" syntax:
+%       title: The title of the algorithm.
+%       label: The label assigned to the algorithm for future referencing. Note
+%              that you must not explicitly use the "\label" command for this.
+%
+%   - By default, each algorithm is numbered (using the "algorithm" counter). If
+%     you want to disable the numbering for a particular algorithm, use the
+%     "SimpleAlgorithm*" environment.
+%
+%   - Each "SimpleAlgorithm" environment must consist of one or several groups
+%     ("AlgorithmGroup" environments), which can be thought of as the major
+%     parts of the algorithm description (Input, Initialization, Main Loop,
+%     Return, etc.). By default, the groups are not visually separated from each
+%     other. If needed, you can use the "\AlgorithmGroupSeparator" command to
+%     add a separator (the horizontal line).
+%
+%   - The "AlgorithmGroup" environment has one optional argument specifying the
+%     title of the group.
+%
+%   - To specify the steps of the algorithm inside a group, use the
+%     "AlgorithmSteps" environment. It has the same syntax as the usual
+%     "enumerate" list with the only difference that you should use the
+%     "\AlgorithmStep" command instead of "\item". Similarly to standard lists,
+%     you can nest the "AlgorithmSteps" environment if needed.
+%
+%   - It is possible to label individual steps for future referencing. To assign
+%     a label, simply add the corresponding "\label" command immediately after
+%     "\AlgorithmStep".
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ProvidesPackage{SimpleAlgorithm}[2021/01/29 Package for typesetting algorithms]
+\NeedsTeXFormat{LaTeX2e}
+
+\RequirePackage{etoolbox}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Process options
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newtoggle{SimpleAlgorithm@EquationMode}
+\togglefalse{SimpleAlgorithm@EquationMode}
+
+\DeclareOption{equation}{\toggletrue{SimpleAlgorithm@EquationMode}}
+
+\ProcessOptions\relax
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Load required packages.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\RequirePackage{array}
+\RequirePackage{xparse}
+\RequirePackage{enumitem}
+\RequirePackage{xkeyval}
+% To make the algorithm automatically fit its contents.
+\RequirePackage{varwidth}
+% For adding some padding between the content of the cell and its border.
+\RequirePackage{makecell}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Define "SimpleAlgorithm".
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\define@key{SimpleAlgorithm}{title}{\newcommand{\SimpleAlgorithm@title}{#1}}
+\define@key{SimpleAlgorithm}{label}{\newcommand{\SimpleAlgorithm@label}{#1}}
+
+% If another algorithm package has already been loaded, continue using the
+% standard "algorithm" counter. Otherwise, define a new one from scratch.
+\ifltxcounter{algorithm}{}{\newcounter{algorithm}}
+
+% Below is the definition of the "equation" environment taken from "latex.ltx".
+% We use it for displaying the algorithm as an equation. This is a safeguard in
+% case the "amsmath" is loaded. The problem is that "amsmath" redefines the
+% standard "equation" environment, and the new version does not allow to use
+% multiple labels inside it. However, for labeling the steps of the algorithm,
+% one needs to use multiple labels.
+\def\SimpleAlgorithmEquation{$$\refstepcounter{equation}}
+\def\endSimpleAlgorithmEquation{\eqno \hbox{\@eqnnum}$$\@ignoretrue}
+
+\newcommand{\SimpleAlgorithmLabel}[1]{\label{#1}}
+
+% Arguments:
+%   1) Optional star (turn off numbering).
+%   2) Optional "key=value" list of parameters.
+\NewDocumentEnvironment{SimpleAlgorithm}{s O{}}{
+  % Process the star.
+  \newtoggle{SimpleAlgorithm@IsNumbered}
+  \toggletrue{SimpleAlgorithm@IsNumbered}
+  \IfBooleanTF{#1}{\togglefalse{SimpleAlgorithm@IsNumbered}}{}
+  % Set up the key-value parameters.
+  \setkeys{SimpleAlgorithm}{#2}
+
+  \ifboolexpr{togl{SimpleAlgorithm@EquationMode}
+              and togl{SimpleAlgorithm@IsNumbered}}{
+    \newcommand{\WrapperEnvironment}{SimpleAlgorithmEquation}
+  }{
+    \newcommand{\WrapperEnvironment}{center}
+  }
+
+  \begin{\WrapperEnvironment}
+  % Increase the appropriate counter and add the "\label" command if needed.
+  \iftoggle{SimpleAlgorithm@IsNumbered}{
+    \iftoggle{SimpleAlgorithm@EquationMode}{
+      % No need to manually increase the "equation" counter since this is
+      % done automatically inside the "equation" environment.
+      \ifdef{\SimpleAlgorithm@label}{
+        \SimpleAlgorithmLabel{\SimpleAlgorithm@label}
+      }{}
+    }{
+      \ifdef{\SimpleAlgorithm@label}{
+        \refstepcounter{algorithm}
+        \SimpleAlgorithmLabel{\SimpleAlgorithm@label}
+      }{
+        \stepcounter{algorithm}
+      }
+    }
+  }{}
+  % Prepare the title.
+  \newcommand{\FormattedTitle}{}
+  \ifboolexpr{not togl{SimpleAlgorithm@EquationMode}
+              and togl{SimpleAlgorithm@IsNumbered}}{
+    \ifdef{\SimpleAlgorithm@title}{
+      \renewcommand{\FormattedTitle}{%
+        Algorithm~\thealgorithm: \SimpleAlgorithm@title%
+      }
+    }{
+      \renewcommand{\FormattedTitle}{Algorithm~\thealgorithm}
+    }
+  }{
+    \ifdef{\SimpleAlgorithm@title}{
+      \renewcommand{\FormattedTitle}{\SimpleAlgorithm@title}
+    }{}
+  }
+  % Add some padding between the content of the cell and its border.
+  \setcellgapes{\partopsep}
+  \makegapedcells
+  % Define the table outline and insert the header if needed.
+  \begin{tabular}{|l|}\hline%
+  \ifboolexpe{test{\ifdef{\SimpleAlgorithm@title}}
+              or (not togl{SimpleAlgorithm@EquationMode} and
+                  togl{SimpleAlgorithm@IsNumbered})}{%
+    \multicolumn{1}{|c|}{\textbf{\FormattedTitle}}%
+    \tabularnewline\hline%
+  }{}%
+}{%
+  \hline\end{tabular}
+  \end{\WrapperEnvironment}
+}
+
+% Make \begin{SimpleAlgorithm*} \end{SimpleAlgorithm*}
+% aliases for \begin{SimpleAlgorithm}* \end{SimpleAlgorithm}.
+% Source: https://tex.stackexchange.com/a/45402.
+\ExplSyntaxOn
+\cs_new:cpn{SimpleAlgorithm*}{\SimpleAlgorithm*}
+\cs_new_eq:cN{endSimpleAlgorithm*}\endSimpleAlgorithm
+\ExplSyntaxOff
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Define "AlgorithmGroup".
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newtoggle{UseHyperref}
+\togglefalse{UseHyperref}
+\@ifpackageloaded{hyperref}{\toggletrue{UseHyperref}}{}
+
+\newsavebox\HyperrefPatchedVarwidth@SaveBox
+
+% For some reason, the standard "varwidth" environment does not work correctly
+% with the "hyperref" package when it contains a list inside. A workaround is as
+% follows: first, apply the "varwidth" with the "hyperref" turned off to
+% determine the correct width of the content, and then create a minipage with
+% the corresponding width.
+\NewDocumentEnvironment{HyperrefPatchedVarwidth}{o m +b}{%
+  \savebox\HyperrefPatchedVarwidth@SaveBox{%
+    \begin{varwidth}[#1]{#2}%
+      \iftoggle{UseHyperref}{%
+        \begin{NoHyper}%
+      }{}%
+      #3%
+      \iftoggle{UseHyperref}{%
+        \end{NoHyper}%
+      }{}%
+    \end{varwidth}%
+  }%
+  \begin{minipage}[#1]{\dimexpr\wd\HyperrefPatchedVarwidth@SaveBox}%
+    #3%
+  \end{minipage}%
+}{}
+
+\NewDocumentEnvironment{AlgorithmGroup}{o +b}{%
+  \raisebox{\topsep}{%
+    \begin{HyperrefPatchedVarwidth}[t]{0.85\linewidth}%
+      \vspace{0pt}%
+      \IfValueTF{#1}{\textbf{#1:}\space\ignorespaces}{}%
+      #2%
+    \end{HyperrefPatchedVarwidth}%
+  }%
+}{}
+
+\AfterEndEnvironment{AlgorithmGroup}{\tabularnewline}
+
+\newcommand{\AlgorithmGroupSeparator}{\hline}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Define "AlgorithmSteps".
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newlist{AlgorithmSteps}{enumerate}{2}
+\setlist[AlgorithmSteps, 1]{
+  label={\arabic*.},
+  ref=\arabic{AlgorithmStepsi},
+  wide,
+  topsep=\itemsep,
+  partopsep=0pt,
+  parsep=0pt
+}
+\setlist[AlgorithmSteps, 2]{
+  label=\alph*),
+  ref={\arabic{AlgorithmStepsi}\alph{AlgorithmStepsii}}
+}
+
+\newcommand{\AlgorithmStep}{\item}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Set up "cleveref" if needed.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\@ifpackageloaded{cleveref}{
+  \if@cref@capitalise
+    \crefname{SimpleAlgorithm}{Algorithm}{Algorithms}
+  \else
+    \crefname{SimpleAlgorithm}{algorithm}{algorithms}
+  \fi
+  \iftoggle{SimpleAlgorithm@EquationMode}{
+    \creflabelformat{SimpleAlgorithm}{#2\textup{(#1)}#3}
+  }{
+    \creflabelformat{SimpleAlgorithm}{#2#1#3}
+  }
+
+  \renewcommand{\SimpleAlgorithmLabel}[1]{
+    \label[SimpleAlgorithm]{#1}
+  }
+
+  \if@cref@capitalise
+    \crefname{AlgorithmStepsi}{Step}{Steps}
+  \else
+    \crefname{AlgorithmStepsi}{step}{steps}
+  \fi
+  \crefalias{AlgorithmStepsii}{AlgorithmStepsi}
+}{}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% The end of the package.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\endinput
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
