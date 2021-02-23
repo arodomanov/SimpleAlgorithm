@@ -64,10 +64,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\ProvidesPackage{SimpleAlgorithm}[2021/01/29 Package for typesetting algorithms]
+\ProvidesPackage{SimpleAlgorithm}
+  [2021/02/23 v1.0 Package for typesetting algorithms]
 \NeedsTeXFormat{LaTeX2e}
 
 \RequirePackage{etoolbox}
+\RequirePackage{ltxcmds}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Process options
@@ -125,6 +127,9 @@
   \IfBooleanTF{#1}{\togglefalse{SimpleAlgorithm@IsNumbered}}{}
   % Set up the key-value parameters.
   \setkeys{SimpleAlgorithm}{#2}
+
+  % Set up vertical spacing.
+  \renewcommand{\arraystretch}{1.5}
 
   \ifboolexpr{togl{SimpleAlgorithm@EquationMode}
               and togl{SimpleAlgorithm@IsNumbered}}{
@@ -195,10 +200,6 @@
 % Define "AlgorithmGroup".
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\newtoggle{UseHyperref}
-\togglefalse{UseHyperref}
-\@ifpackageloaded{hyperref}{\toggletrue{UseHyperref}}{}
-
 \newsavebox\HyperrefPatchedVarwidth@SaveBox
 
 % For some reason, the standard "varwidth" environment does not work correctly
@@ -209,11 +210,11 @@
 \NewDocumentEnvironment{HyperrefPatchedVarwidth}{o m +b}{%
   \savebox\HyperrefPatchedVarwidth@SaveBox{%
     \begin{varwidth}[#1]{#2}%
-      \iftoggle{UseHyperref}{%
+      \ltx@ifpackageloaded{hyperref}{%
         \begin{NoHyper}%
       }{}%
       #3%
-      \iftoggle{UseHyperref}{%
+      \ltx@ifpackageloaded{hyperref}{%
         \end{NoHyper}%
       }{}%
     \end{varwidth}%
@@ -261,30 +262,33 @@
 % Set up "cleveref" if needed.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\@ifpackageloaded{cleveref}{
-  \if@cref@capitalise
-    \crefname{SimpleAlgorithm}{Algorithm}{Algorithms}
-  \else
-    \crefname{SimpleAlgorithm}{algorithm}{algorithms}
-  \fi
-  \iftoggle{SimpleAlgorithm@EquationMode}{
-    \creflabelformat{SimpleAlgorithm}{#2\textup{(#1)}#3}
-  }{
-    \creflabelformat{SimpleAlgorithm}{#2#1#3}
-  }
+% Defer setting up until the end of preamble in case the user decides to load
+% "cleveref" after "SimpleAlgorithm".
+\AtEndPreamble{
+  \@ifpackageloaded{cleveref}{
+    \if@cref@capitalise
+      \crefname{SimpleAlgorithm}{Algorithm}{Algorithms}
+    \else
+      \crefname{SimpleAlgorithm}{algorithm}{algorithms}
+    \fi
+    \iftoggle{SimpleAlgorithm@EquationMode}{
+      \creflabelformat{SimpleAlgorithm}{#2\textup{(#1)}#3}
+    }{
+      \creflabelformat{SimpleAlgorithm}{#2#1#3}
+    }
 
-  \renewcommand{\SimpleAlgorithmLabel}[1]{
-    \label[SimpleAlgorithm]{#1}
-  }
+    \renewcommand{\SimpleAlgorithmLabel}[1]{
+      \label[SimpleAlgorithm]{#1}
+    }
 
-  \if@cref@capitalise
-    \crefname{AlgorithmStepsi}{Step}{Steps}
-  \else
-    \crefname{AlgorithmStepsi}{step}{steps}
-  \fi
-  \crefalias{AlgorithmStepsii}{AlgorithmStepsi}
-}{}
-
+    \if@cref@capitalise
+      \crefname{AlgorithmStepsi}{Step}{Steps}
+    \else
+      \crefname{AlgorithmStepsi}{step}{steps}
+    \fi
+    \crefalias{AlgorithmStepsii}{AlgorithmStepsi}
+  }{}
+}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % The end of the package.
