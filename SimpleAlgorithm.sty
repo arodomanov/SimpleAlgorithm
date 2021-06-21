@@ -7,7 +7,11 @@
 % ------------------------------------------------------------------------------
 % \usepackage{SimpleAlgorithm} % in the preamble
 %
-% \begin{SimpleAlgorithm}[title={Gradient Method},label=GradientMethod]
+% \begin{SimpleAlgorithm}[%
+%   title={Gradient Method},%
+%   label=GradientMethod,%
+%   width=0.5\linewidth%
+% ]%
 %   \begin{AlgorithmGroup}[Input]
 %     Starting point $x_0$, step size $\alpha > 0$.
 %   \end{AlgorithmGroup}
@@ -31,11 +35,12 @@
 %     Example:
 %       \usepackage[equation]{SimpleAlgorithm}
 %
-%   - The "SimpleAlgorithm" environment has two optional arguments, which can be
-%     specified using the standard "keyword=value" syntax:
+%   - The "SimpleAlgorithm" environment has several optional arguments, which
+%     can be specified using the standard "keyword=value" syntax:
 %       title: The title of the algorithm.
 %       label: The label assigned to the algorithm for future referencing. Note
 %              that you must not explicitly use the "\label" command for this.
+%       width: The width of the algorithm (default: 0.85\linewidth).
 %
 %   - By default, each algorithm is numbered (using the "algorithm" counter). If
 %     you want to disable the numbering for a particular algorithm, use the
@@ -65,7 +70,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \ProvidesPackage{SimpleAlgorithm}
-  [2021/02/23 v1.0 Package for typesetting algorithms]
+  [2021/06/21 v1.1 Package for typesetting algorithms]
 \NeedsTeXFormat{LaTeX2e}
 
 \RequirePackage{etoolbox}
@@ -90,8 +95,6 @@
 \RequirePackage{xparse}
 \RequirePackage{enumitem}
 \RequirePackage{xkeyval}
-% To make the algorithm automatically fit its contents.
-\RequirePackage{varwidth}
 % For adding some padding between the content of the cell and its border.
 \RequirePackage{makecell}
 
@@ -99,8 +102,12 @@
 % Define "SimpleAlgorithm".
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Set up default algorithm width.
+\newcommand{\SimpleAlgorithm@width}{0.85\linewidth}
+
 \define@key{SimpleAlgorithm}{title}{\newcommand{\SimpleAlgorithm@title}{#1}}
 \define@key{SimpleAlgorithm}{label}{\newcommand{\SimpleAlgorithm@label}{#1}}
+\define@key{SimpleAlgorithm}{width}{\renewcommand{\SimpleAlgorithm@width}{#1}}
 
 % If another algorithm package has already been loaded, continue using the
 % standard "algorithm" counter. Otherwise, define a new one from scratch.
@@ -180,7 +187,9 @@
   \ifboolexpe{test{\ifdef{\SimpleAlgorithm@title}}
               or (not togl{SimpleAlgorithm@EquationMode} and
                   togl{SimpleAlgorithm@IsNumbered})}{%
-    \multicolumn{1}{|c|}{\textbf{\FormattedTitle}}%
+    \begin{minipage}[t]{\SimpleAlgorithm@width}\centering%
+      \textbf{\FormattedTitle}%
+    \end{minipage}%
     \tabularnewline\hline%
   }{}%
 }{%
@@ -200,39 +209,18 @@
 % Define "AlgorithmGroup".
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\newsavebox\HyperrefPatchedVarwidth@SaveBox
+\newsavebox{\AlgorithmGroup@SaveBox}
 
-% For some reason, the standard "varwidth" environment does not work correctly
-% with the "hyperref" package when it contains a list inside. A workaround is as
-% follows: first, apply the "varwidth" with the "hyperref" turned off to
-% determine the correct width of the content, and then create a minipage with
-% the corresponding width.
-\NewDocumentEnvironment{HyperrefPatchedVarwidth}{o m +b}{%
-  \savebox\HyperrefPatchedVarwidth@SaveBox{%
-    \begin{varwidth}[#1]{#2}%
-      \ltx@ifpackageloaded{hyperref}{%
-        \begin{NoHyper}%
-      }{}%
-      #3%
-      \ltx@ifpackageloaded{hyperref}{%
-        \end{NoHyper}%
-      }{}%
-    \end{varwidth}%
-  }%
-  \begin{minipage}[#1]{\dimexpr\wd\HyperrefPatchedVarwidth@SaveBox}%
-    #3%
-  \end{minipage}%
-}{}
-
-\NewDocumentEnvironment{AlgorithmGroup}{o +b}{%
-  \raisebox{\topsep}{%
-    \begin{HyperrefPatchedVarwidth}[t]{0.85\linewidth}%
+\NewDocumentEnvironment{AlgorithmGroup}{o}{%
+  \begin{lrbox}{\AlgorithmGroup@SaveBox}%
+    \begin{minipage}[t]{\SimpleAlgorithm@width}%
       \vspace{0pt}%
       \IfValueTF{#1}{\textbf{#1:}\space\ignorespaces}{}%
-      #2%
-    \end{HyperrefPatchedVarwidth}%
-  }%
-}{}
+}{%
+  \end{minipage}%
+  \end{lrbox}%
+  \raisebox{\topsep}{\usebox{\AlgorithmGroup@SaveBox}}%
+}
 
 \AfterEndEnvironment{AlgorithmGroup}{\tabularnewline}
 
