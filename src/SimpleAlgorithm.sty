@@ -1,77 +1,12 @@
-% This package provides new commands for typesetting simple algorithms. Each
-% algorithm looks like a table containing an enumerated list of steps inside it.
+% Copyright (C) 2022 Anton Rodomanov
 %
-% Author: Anton Rodomanov
+% This file is part of the `SimpleAlgorithm` package.
 %
-% Usage example:
-% ------------------------------------------------------------------------------
-% \usepackage{SimpleAlgorithm} % in the preamble
-%
-% \begin{SimpleAlgorithm}[%
-%   title={Gradient Method},%
-%   label=GradientMethod,%
-%   width=0.5\linewidth%
-% ]%
-%   \begin{AlgorithmGroup}[Input]
-%     Starting point $x_0$, step size $\alpha > 0$.
-%   \end{AlgorithmGroup}
-%   \AlgorithmGroupSeparator
-%   \begin{AlgorithmGroup}[Iteration $k \geq 0$]
-%     \begin{AlgorithmSteps}
-%       \AlgorithmStep Compute the gradient $\nabla f(x_k)$.
-%       \AlgorithmStep Update $x_{k+1} = x_k - \alpha \nabla f(x_k)$.
-%     \end{AlgorithmSteps}
-%   \end{AlgorithmGroup}
-% \end{SimpleAlgorithm}
-% ------------------------------------------------------------------------------
-%
-% Notes:
-%   - To load the package, add the following command to the preamble:
-%       \usepackage{SimpleAlgorithm}
-%
-%   - When loading the package, you can also specify the following options:
-%       equation: This option turns on the equation mode. In this mode, all
-%                 algorithms are treated like usual equations.
-%     Example:
-%       \usepackage[equation]{SimpleAlgorithm}
-%
-%   - The "SimpleAlgorithm" environment has several optional arguments, which
-%     can be specified using the standard "keyword=value" syntax:
-%       title: The title of the algorithm.
-%       label: The label assigned to the algorithm for future referencing. Note
-%              that you must not explicitly use the "\label" command for this.
-%       width: The width of the algorithm (default: 0.85\linewidth).
-%
-%   - By default, each algorithm is numbered (using the "algorithm" counter). If
-%     you want to disable the numbering for a particular algorithm, use the
-%     "SimpleAlgorithm*" environment.
-%
-%   - Each "SimpleAlgorithm" environment must consist of one or several groups
-%     ("AlgorithmGroup" environments), which can be thought of as the major
-%     parts of the algorithm description (Input, Initialization, Main Loop,
-%     Return, etc.). By default, the groups are not visually separated from each
-%     other. If needed, you can use the "\AlgorithmGroupSeparator" command to
-%     add a separator (the horizontal line).
-%
-%   - The "AlgorithmGroup" environment has one optional argument specifying the
-%     title of the group.
-%
-%   - To specify the steps of the algorithm inside a group, use the
-%     "AlgorithmSteps" environment. It has the same syntax as the usual
-%     "enumerate" list with the only difference that you should use the
-%     "\AlgorithmStep" command instead of "\item". Similarly to standard lists,
-%     you can nest the "AlgorithmSteps" environment if needed.
-%
-%   - It is possible to label individual steps for future referencing. To assign
-%     a label, simply add the corresponding "\label" command immediately after
-%     "\AlgorithmStep".
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% You may distribute and/or modify this code under the conditions
+% of the LaTeX Project Public License, version 1.3c or any later version.
 
-\ProvidesPackage{SimpleAlgorithm}
-  [2021/06/21 v1.1 Package for typesetting algorithms]
 \NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{SimpleAlgorithm}[2022/06/21 v0.1 Simple package for typesetting algorithms]
 
 \RequirePackage{etoolbox}
 \RequirePackage{ltxcmds}
@@ -95,11 +30,10 @@
 \RequirePackage{xparse}
 \RequirePackage{enumitem}
 \RequirePackage{xkeyval}
-% For adding some padding between the content of the cell and its border.
-\RequirePackage{makecell}
+\RequirePackage{makecell} % For adding some padding between the content of the cell and its border.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Define "SimpleAlgorithm".
+% Define `SimpleAlgorithm`.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Set up default algorithm width.
@@ -110,13 +44,13 @@
 \define@key{SimpleAlgorithm}{width}{\renewcommand{\SimpleAlgorithm@width}{#1}}
 
 % If another algorithm package has already been loaded, continue using the
-% standard "algorithm" counter. Otherwise, define a new one from scratch.
+% standard `algorithm` counter. Otherwise, define a new one from scratch.
 \ifltxcounter{algorithm}{}{\newcounter{algorithm}}
 
-% Below is the definition of the "equation" environment taken from "latex.ltx".
+% Below is the definition of the `equation` environment taken from `latex.ltx`.
 % We use it for displaying the algorithm as an equation. This is a safeguard in
-% case the "amsmath" is loaded. The problem is that "amsmath" redefines the
-% standard "equation" environment, and the new version does not allow to use
+% case the `amsmath` is loaded. The problem is that `amsmath` redefines the
+% standard `equation` environment, and the new version does not allow to use
 % multiple labels inside it. However, for labeling the steps of the algorithm,
 % one needs to use multiple labels.
 \def\SimpleAlgorithmEquation{$$\refstepcounter{equation}}
@@ -126,7 +60,8 @@
 
 % Arguments:
 %   1) Optional star (turn off numbering).
-%   2) Optional "key=value" list of parameters.
+%   2) Optional `key=value` list of parameters.
+%! parser = off
 \NewDocumentEnvironment{SimpleAlgorithm}{s O{}}{
   % Process the star.
   \newtoggle{SimpleAlgorithm@IsNumbered}
@@ -146,11 +81,11 @@
   }
 
   \begin{\WrapperEnvironment}
-  % Increase the appropriate counter and add the "\label" command if needed.
+  % Increase the appropriate counter and add the `\label` command if needed.
   \iftoggle{SimpleAlgorithm@IsNumbered}{
     \iftoggle{SimpleAlgorithm@EquationMode}{
-      % No need to manually increase the "equation" counter since this is
-      % done automatically inside the "equation" environment.
+      % No need to manually increase the `equation` counter since this is
+      % done automatically inside the `equation` environment.
       \ifdef{\SimpleAlgorithm@label}{
         \SimpleAlgorithmLabel{\SimpleAlgorithm@label}
       }{}
@@ -196,17 +131,18 @@
   \hline\end{tabular}
   \end{\WrapperEnvironment}
 }
+%! parser = on
 
-% Make \begin{SimpleAlgorithm*} \end{SimpleAlgorithm*}
-% aliases for \begin{SimpleAlgorithm}* \end{SimpleAlgorithm}.
-% Source: https://tex.stackexchange.com/a/45402.
+% Make `\begin{SimpleAlgorithm*}` `\end{SimpleAlgorithm*}`
+% aliases for `\begin{SimpleAlgorithm}*` `\end{SimpleAlgorithm}`.
+% See: https://tex.stackexchange.com/a/45402.
 \ExplSyntaxOn
 \cs_new:cpn{SimpleAlgorithm*}{\SimpleAlgorithm*}
 \cs_new_eq:cN{endSimpleAlgorithm*}\endSimpleAlgorithm
 \ExplSyntaxOff
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Define "AlgorithmGroup".
+% Define `AlgorithmGroup`.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \newsavebox{\AlgorithmGroup@SaveBox}
@@ -227,7 +163,7 @@
 \newcommand{\AlgorithmGroupSeparator}{\hline}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Define "AlgorithmSteps".
+% Define `AlgorithmSteps`.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \newlist{AlgorithmSteps}{enumerate}{2}
@@ -247,11 +183,11 @@
 \newcommand{\AlgorithmStep}{\item}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Set up "cleveref" if needed.
+% Set up `cleveref` if needed.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Defer setting up until the end of preamble in case the user decides to load
-% "cleveref" after "SimpleAlgorithm".
+% `cleveref` after `SimpleAlgorithm`.
 \AtEndPreamble{
   \@ifpackageloaded{cleveref}{
     \if@cref@capitalise

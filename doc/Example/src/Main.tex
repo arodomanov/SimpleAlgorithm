@@ -1,0 +1,38 @@
+% Copyright (C) 2022 Anton Rodomanov
+%
+% This file is part of the `SimpleAlgorithm` package.
+%
+% You may distribute and/or modify this code under the conditions
+% of the LaTeX Project Public License, version 1.3c or any later version.
+
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{SimpleAlgorithm}
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+\begin{document}
+  Consider the following method:
+
+  \begin{SimpleAlgorithm}
+  [
+    title={Gradient Method},
+    label=alg:GradientMethod,
+    width=0.55\linewidth
+  ]
+    \begin{AlgorithmGroup}[Input]
+      Starting point $x_0$, step size $\alpha > 0$.
+    \end{AlgorithmGroup}
+    \AlgorithmGroupSeparator
+    \begin{AlgorithmGroup}[Iteration $k \geq 0$]
+      \begin{AlgorithmSteps}
+        \AlgorithmStep Compute the gradient $\nabla f(x_k)$.
+        \AlgorithmStep\label{step:GradientStep} Update $x_{k+1} = x_k - \alpha \nabla f(x_k)$.
+      \end{AlgorithmSteps}
+    \end{AlgorithmGroup}
+  \end{SimpleAlgorithm}
+  
+  In \cref{alg:GradientMethod}, we have two parameters: $x_0$ and $\alpha$. The main update is performed at
+  \cref{step:GradientStep}.
+\end{document}
